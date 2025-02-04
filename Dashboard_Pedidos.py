@@ -18,13 +18,19 @@ st.set_page_config(layout = 'wide')
 
 st.title('AGENTE DE COMPRAS :shopping_trolley:')
 
-
-def formata_numero(valor, prefixo = ''):
-    for unidade in ['', 'mil']:
+def formata_numero(valor, prefixo=''):
+    for unidade in ['', 'mil', 'milhões', 'bilhões']:
         if valor < 1000:
-            return f'{prefixo} {valor:.2f} {unidade}'
-        valor /=1000
-    return f'{prefixo} {valor:.2f} milhões'
+            return f'{prefixo} {valor:.2f} {unidade}'.strip()
+        valor /= 1000
+    return f'{prefixo} {valor:.2f} trilhões'
+
+def formata_numero2(valor, prefixo=''):
+    for unidade in ['', 'mil', 'MM', 'BI']:
+        if valor < 1000:
+            return f'{prefixo} {valor:.2f} {unidade}'.strip()
+        valor /= 1000
+    return f'{prefixo} {valor:.2f} TRI'
 
 def converte_csv(df):
     return df.to_csv(index = False).encode('utf-8')
@@ -39,7 +45,8 @@ def mensagem_sucesso():
 df = pd.read_csv("base_pedidos.csv")
 df['Data do Pedido'] = pd.to_datetime(df['Data do Pedido'], errors = 'coerce')
 df.rename(columns={'Valor PO - R$': 'Valor'}, inplace=True)
-
+data_min = df['Data do Pedido'].min().strftime('%d/%m/%Y')  # Formata como dd/mm/yyyy
+data_max = df['Data do Pedido'].max().strftime('%d/%m/%Y')  # Formata como dd/mm/yyyy
 
 # Sidebar - Filtros
 st.sidebar.title('Filtros')
@@ -51,8 +58,10 @@ fornecedor = st.sidebar.selectbox('Selecione o Fornecedor', opcoes_fornecedor, i
 area = st.sidebar.selectbox('Selecione a Área', opcoes_area, index=0)
 data_pedido = st.sidebar.date_input(
     'Selecione a Data',
-    value=(df['Data do Pedido'].min(), df['Data do Pedido'].max())
+    value=(df['Data do Pedido'].min(), df['Data do Pedido'].max()),  # Mantém os valores originais como datetime
+    key='data_pedido'
 )
+
 
 if fornecedor != "Todos":
     df = df[df['Nome Fornecedor'] == fornecedor]
@@ -70,13 +79,13 @@ else:
         (df['Data do Pedido'] <= pd.to_datetime(data_pedido[1]))
     ]
 
-
 # Tabelas
 
 pedidos_fornecedor = df.groupby('Nome Fornecedor')['Valor'].agg(['sum', 'count']) \
     .rename(columns={'sum': 'Valor Total', 'count': 'Quantidade'}) \
     .sort_values(by='Valor Total', ascending=False) \
     .reset_index()
+pedidos_fornecedor['Valor Total Formatado'] = pedidos_fornecedor['Valor Total'].apply(lambda x: formata_numero2(x, 'R$'))
 
 pedidos_mensal = df
 pedidos_mensal['Mes'] = pedidos_mensal['Data do Pedido'].dt.month.apply(lambda x: calendar.month_name[x])
@@ -85,54 +94,69 @@ meses_ordem = list(calendar.month_name[1:])
 pedidos_mensal['Mes'] = pd.Categorical(pedidos_mensal['Mes'], categories=meses_ordem, ordered=True)
 pedidos_mensal = pedidos_mensal.sort_values('Mes').reset_index(drop=True)
 
-pedidos_area = df.groupby('Area Autorizador')['Valor'].agg('sum').sort_values(ascending = False).reset_index()
-pedidos_area['Valor'] = round(pedidos_area['Valor'],0)
+pedidos_area = df.groupby('Area Autorizador')['Valor'].agg('sum').sort_values(ascending=False).reset_index()
+pedidos_area['Valor'] = round(pedidos_area['Valor'], 0)
+pedidos_area['Valor Formatado'] = pedidos_area['Valor'].apply(lambda x: formata_numero2(x, 'R$'))
+pedidos_area = pedidos_area.sort_values('Valor', ascending=False)
 
 df_compliance = df.copy()
 df_compliance['Check Compliance'] = df_compliance['Check Compliance'].fillna('Baixo')
 
 pedidos_compliance = df_compliance.groupby('Check Compliance')['Numero PO'].agg('count').reset_index()
-pedidos_compliance_alto = df_compliance[df_compliance['Check Compliance'] == 'Alto'].groupby('Nome Fornecedor')['Valor'].agg('sum').sort_values(ascending=False).reset_index()
-pedidos_compliance_alto_area = df_compliance[df_compliance['Check Compliance'] == 'Alto'].groupby('Area Autorizador')['Valor'].agg('sum').sort_values(ascending=False).reset_index()
+pedidos_compliance['Numero Formatado'] = pedidos_compliance['Numero PO'].apply(lambda x: formata_numero2(x))
 
+pedidos_compliance_alto = df_compliance[df_compliance['Check Compliance'] == 'Alto'].groupby('Nome Fornecedor')['Valor'].agg('sum').sort_values(ascending=False).reset_index()
+pedidos_compliance_alto['Valor Formatado'] = pedidos_compliance_alto['Valor'].apply(lambda x: formata_numero2(x, 'R$'))
+
+pedidos_compliance_alto_area = df_compliance[df_compliance['Check Compliance'] == 'Alto'].groupby('Area Autorizador')['Valor'].agg('sum').sort_values(ascending=False).reset_index()
+pedidos_compliance_alto_area['Valor Formatado'] = pedidos_compliance_alto_area['Valor'].apply(lambda x: formata_numero2(x, 'R$'))
 
 # Gráficos
 cores = {
-    'Alto': 'red',    
-    'Médio': 'yellow', 
-    'Baixo': 'green'   
+    'Alto': '#B22222',    
+    'Médio': '#FFD700', 
+    'Baixo': '#228B22'   
 }
 
 cores2 = {
-    'Inefetivo': 'red',     
-    'Efetivo': 'green'   
+    'Inefetivo': '#B22222',     
+    'Efetivo': '#228B22'   
 }
 
 ## ABA1
 
-fig_pedidos_fornecedor = px.bar(pedidos_fornecedor.head(),
-                                x = 'Nome Fornecedor',
-                                y = 'Valor Total',
-                                text_auto=True,
-                                title = 'Gastos pelo Top 5')                               
+fig_pedidos_fornecedor = px.bar(
+    pedidos_fornecedor.head(),
+    x='Nome Fornecedor',
+    y='Valor Total',  # O eixo Y mantém os valores numéricos para não afetar a escala
+    text=pedidos_fornecedor.head()['Valor Total Formatado'],  # Exibir valores formatados nos rótulos
+    title='Gastos pelo Top 5',
+    color_discrete_sequence=["#174A7E"]
+)                     
 
 fig_pedidos_mensal = px.line(pedidos_mensal,
                              x = 'Mes',
                              y = 'Valor',
                              title = 'Gastos por mês',
+                             color_discrete_sequence=["#174A7E"],
                              markers = True)
 
-fig_pedidos_area = px.bar(pedidos_area.head(5),
-                          x = 'Area Autorizador',
-                          y = 'Valor',
-                          title = 'Gastos por área (Top 5)',
-                          text_auto = True)
+fig_pedidos_area = px.bar(
+    pedidos_area.head(5),
+    x='Area Autorizador',
+    y='Valor',  # Usar a coluna numérica para manter a escala correta
+    title='Gastos por área (Top 5)',
+    color_discrete_sequence=["#174A7E"],
+    text=pedidos_area.head(5)['Valor Formatado']  # Exibir os valores formatados como rótulos
+)
 
 # Remover os labels dos eixos X e Y
 fig_pedidos_fornecedor.update_layout(
     xaxis_title=None,
     yaxis_title=None
 )
+
+fig_pedidos_fornecedor.update_yaxes(title=None, showticklabels=False)
 
 fig_pedidos_mensal.update_layout(
     xaxis_title=None,
@@ -146,7 +170,7 @@ fig_pedidos_area.update_layout(
     yaxis_title=None
 )
 
-
+fig_pedidos_area.update_yaxes(title=None, showticklabels=False)
 
 # Display the data in Streamlit
 
@@ -170,22 +194,24 @@ with aba2:
     fig_compliance_riscos = px.bar(pedidos_compliance,
                                    x = 'Check Compliance',
                                    y = 'Numero PO',
-                                   text_auto= True,
-                                   title = 'Distribuição dos pedidos',
+                                   text = 'Numero Formatado',
+                                   title = 'Distribuição dos pedidos - riscos',
                                    color = 'Check Compliance',
                                    color_discrete_map = cores)
 
     fig_fornecedor_alto = px.bar(pedidos_compliance_alto.head(numero_fornecedores),
                                  x = 'Nome Fornecedor',
                                  y = 'Valor',
+                                 text = 'Valor Formatado',
                                  title = 'Top fornecedores de risco',
-                                 text_auto=True)
+                                 color_discrete_sequence=["#174A7E"])
 
     fig_fornecedor_alto_area = px.bar(pedidos_compliance_alto_area.head(numero_fornecedores),
                                  x = 'Area Autorizador',
                                  y = 'Valor',
+                                 text = 'Valor Formatado',
                                  title = 'Top fornecedores de risco',
-                                 text_auto=True)
+                                 color_discrete_sequence=["#174A7E"])
     
     fig_compliance_riscos.update_layout(
         xaxis_title=None,
@@ -193,15 +219,21 @@ with aba2:
         showlegend=False
     )
 
+    fig_compliance_riscos.update_yaxes(title=None, showticklabels=False)
+    
     fig_fornecedor_alto.update_layout(
         xaxis_title=None,
         yaxis_title=None
     )
+    
+    fig_fornecedor_alto.update_yaxes(title=None, showticklabels=False)
 
     fig_fornecedor_alto_area.update_layout(
         xaxis_title=None,
         yaxis_title=None
     )
+    
+    fig_fornecedor_alto_area.update_yaxes(title=None, showticklabels=False)
     
     st.plotly_chart(fig_compliance_riscos, use_container_width = True)
     coluna1, coluna2 = st.columns(2)
@@ -240,7 +272,7 @@ with aba3:
     
     st.header('Análise do Agente (IA)')
     
-    df_agente = pd.read_excel('auditoria_pedidos.xlsx').drop(columns=['ID'])
+    df_agente = pd.read_excel('auditoria_pedidos.xlsx', engine='openpyxl').drop(columns=['ID'])
     st.dataframe(df_agente)
     st.markdown(f'A tabela possui :blue[{df_agente.shape[0]}] linhas e :blue[{df_agente.shape[1]}] colunas.')
     
@@ -258,7 +290,7 @@ with aba3:
         efetividade_pedidos = df.groupby('Check Alcada')['Numero PO'].agg('count').reset_index()
         fig_efetividade_pedidos = px.pie(efetividade_pedidos,
                                          names='Check Alcada',
-                                         title = '% de Eefetividade',
+                                         title = '% de Efetividade',
                                          values='Numero PO',
                                          color = 'Check Alcada',
                                          color_discrete_map=cores2)
