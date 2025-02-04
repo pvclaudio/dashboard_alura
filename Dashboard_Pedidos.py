@@ -53,9 +53,11 @@ st.sidebar.title('Filtros')
 
 opcoes_fornecedor = ["Todos"] + list(df['Nome Fornecedor'].dropna().unique())
 opcoes_area = ["Todos"] + list(df['Area Autorizador'].dropna().unique())
+opcoes_contabil = ["Todos"] + list(df['Tipo Contábil'].dropna().unique())
 
 fornecedor = st.sidebar.selectbox('Selecione o Fornecedor', opcoes_fornecedor, index=0)
 area = st.sidebar.selectbox('Selecione a Área', opcoes_area, index=0)
+tipo_contabil = st.sidebar.selectbox('Selecione o tipo contábil', opcoes_contabil, index=0)
 data_pedido = st.sidebar.date_input(
     'Selecione a Data',
     value=(df['Data do Pedido'].min(), df['Data do Pedido'].max()),  # Mantém os valores originais como datetime
@@ -69,6 +71,9 @@ if fornecedor != "Todos":
 if area != "Todos":
     df = df[df['Area Autorizador'] == area]
 
+if tipo_contabil != "Todos":
+    df = df[df['Tipo Contábil'] == tipo_contabil]
+    
 # Verificar se o usuário deixou o filtro vazio ou inválido
 if not data_pedido or len(data_pedido) != 2 or data_pedido[0] > data_pedido[1]:
     st.sidebar.warning("Nenhuma data válida foi selecionada. Exibindo todos os dados.")
@@ -311,4 +316,6 @@ with aba3:
             xaxis_title=None,
             yaxis_title=None
         )
+        fig_pedidos_inefetivos.update_yaxes(title=None, showticklabels=False)
         st.plotly_chart(fig_pedidos_inefetivos, use_container_width = True)
+        
