@@ -128,16 +128,7 @@ cores2 = {
     'Efetivo': '#228B22'   
 }
 
-## ABA1
-
-fig_pedidos_fornecedor = px.bar(
-    pedidos_fornecedor.head(),
-    x='Nome Fornecedor',
-    y='Valor Total',  # O eixo Y mantém os valores numéricos para não afetar a escala
-    text=pedidos_fornecedor.head()['Valor Total Formatado'],  # Exibir valores formatados nos rótulos
-    title='Gastos pelo Top 5',
-    color_discrete_sequence=["#174A7E"]
-)                     
+## ABA1                 
 
 fig_pedidos_mensal = px.line(pedidos_mensal,
                              x = 'Mes',
@@ -146,22 +137,8 @@ fig_pedidos_mensal = px.line(pedidos_mensal,
                              color_discrete_sequence=["#174A7E"],
                              markers = True)
 
-fig_pedidos_area = px.bar(
-    pedidos_area.head(5),
-    x='Area Autorizador',
-    y='Valor',  # Usar a coluna numérica para manter a escala correta
-    title='Gastos por área (Top 5)',
-    color_discrete_sequence=["#174A7E"],
-    text=pedidos_area.head(5)['Valor Formatado']  # Exibir os valores formatados como rótulos
-)
 
 # Remover os labels dos eixos X e Y
-fig_pedidos_fornecedor.update_layout(
-    xaxis_title=None,
-    yaxis_title=None
-)
-
-fig_pedidos_fornecedor.update_yaxes(title=None, showticklabels=False)
 
 fig_pedidos_mensal.update_layout(
     xaxis_title=None,
@@ -169,31 +146,61 @@ fig_pedidos_mensal.update_layout(
     yaxis=dict(range=[0, pedidos_mensal['Valor'].max()*1.1])
 )
 
-
-fig_pedidos_area.update_layout(
-    xaxis_title=None,
-    yaxis_title=None
-)
-
-fig_pedidos_area.update_yaxes(title=None, showticklabels=False)
-
 # Display the data in Streamlit
 
 aba1, aba2, aba3 = st.tabs(['Visão Geral dos Pedidos', 'Compliance', 'Auditoria'])
 
 with aba1:
     st.plotly_chart(fig_pedidos_mensal,use_container_width = True)
+    numero_fornecedor = st.number_input('Quantos fornecedores deseja visualizar?',min_value = 1, value = 5, key= 'numero_fornecedor')
+    numero_fornecedor = min(numero_fornecedor, len(pedidos_fornecedor))
+    
     coluna1, coluna2 = st.columns(2)
     with coluna1:
         st.metric('Gasto Total - R$', formata_numero(df['Valor'].sum(), 'R$'))
+        
+        fig_pedidos_fornecedor = px.bar(
+            pedidos_fornecedor.head(numero_fornecedor),
+            x='Nome Fornecedor',
+            y='Valor Total',  # O eixo Y mantém os valores numéricos para não afetar a escala
+            text=pedidos_fornecedor.head(numero_fornecedor)['Valor Total Formatado'],  # Exibir valores formatados nos rótulos
+            title=f'Gastos pelo Top {numero_fornecedor}',
+            color_discrete_sequence=["#174A7E"]
+        )
+        
+        fig_pedidos_fornecedor.update_layout(
+            xaxis_title=None,
+            yaxis_title=None
+        )
+
+        fig_pedidos_fornecedor.update_yaxes(title=None, showticklabels=False)
+        
         st.plotly_chart(fig_pedidos_fornecedor, use_container_width = True)
+        
     with coluna2:
         st.metric('Quantidade de Pedidos', formata_numero(df.shape[0]))
+        
+        fig_pedidos_area = px.bar(
+            pedidos_area.head(numero_fornecedor),
+            x='Area Autorizador',
+            y='Valor',  # Usar a coluna numérica para manter a escala correta
+            title=f'Gastos por área (Top {numero_fornecedor})',
+            color_discrete_sequence=["#174A7E"],
+            text=pedidos_area.head(numero_fornecedor)['Valor Formatado']  # Exibir os valores formatados como rótulos
+        )
+        
+        fig_pedidos_area.update_layout(
+            xaxis_title=None,
+            yaxis_title=None
+        )
+
+        fig_pedidos_area.update_yaxes(title=None, showticklabels=False)
+        
         st.plotly_chart(fig_pedidos_area,  use_container_width = True)
         
         
 with aba2: 
-    numero_fornecedores = st.number_input('Quantos fornecedores deseja visualizar?',min_value = 1, value = 5)
+    numero_fornecedores = st.number_input('Quantos itens deseja visualizar?',min_value = 1, value = 5, key= 'numero_fornecedores')
     numero_fornecedores = min(numero_fornecedores, len(pedidos_fornecedor))
     
     fig_compliance_riscos = px.bar(pedidos_compliance,
@@ -208,14 +215,14 @@ with aba2:
                                  x = 'Nome Fornecedor',
                                  y = 'Valor',
                                  text = 'Valor Formatado',
-                                 title = 'Top fornecedores de risco',
+                                 title = f'Top {numero_fornecedores} fornecedores de risco',
                                  color_discrete_sequence=["#174A7E"])
 
     fig_fornecedor_alto_area = px.bar(pedidos_compliance_alto_area.head(numero_fornecedores),
                                  x = 'Area Autorizador',
                                  y = 'Valor',
                                  text = 'Valor Formatado',
-                                 title = 'Top fornecedores de risco',
+                                 title = f'Top {numero_fornecedores} áreas de maior risco',
                                  color_discrete_sequence=["#174A7E"])
     
     fig_compliance_riscos.update_layout(
