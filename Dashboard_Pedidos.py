@@ -48,7 +48,11 @@ df.rename(columns={'Valor PO - R$': 'Valor'}, inplace=True)
 data_min = df['Data do Pedido'].min().strftime('%d/%m/%Y')  # Formata como dd/mm/yyyy
 data_max = df['Data do Pedido'].max().strftime('%d/%m/%Y')  # Formata como dd/mm/yyyy
 df['Ano'] = df['Data do Pedido'].dt.year
-
+df_fup = pd.read_excel('controle_fups.xlsx', sheet_name='2024', engine="openpyxl", header=0)
+df_fup['Status'] = df_fup['Status'].replace(
+    {'Concluído - No Prazo': 'Concluído', 'Concluído - Fora do Prazo': 'Concluído'}
+)
+df_fup = df_fup.drop(columns='Titulo')
 
 # Sidebar - Filtros
 st.sidebar.title('Filtros')
@@ -56,7 +60,7 @@ st.sidebar.title('Filtros')
 opcoes_fornecedor = ["Todos"] + list(df['Nome Fornecedor'].dropna().unique())
 opcoes_area = ["Todos"] + list(df['Area Autorizador'].dropna().unique())
 opcoes_contabil = ["Todos"] + list(df['Tipo Contábil'].dropna().unique())
-opcoes_ano = ['Todos'] + list(df['Ano'].dropna().unique())
+opcoes_ano = ['Todos'] + [2025] + list(df_fup['Ano'].dropna().unique())
 
 fornecedor = st.sidebar.selectbox('Selecione o Fornecedor', opcoes_fornecedor, index=0)
 area = st.sidebar.selectbox('Selecione a Área', opcoes_area, index=0, key='selecionar area')
@@ -80,6 +84,7 @@ if tipo_contabil != "Todos":
     
 if ano_escolhido != 'Todos':
     df = df[df['Ano'] == ano_escolhido]
+    df_fup = df_fup[df_fup['Ano'] == ano_escolhido]
     
 # Verificar se o usuário deixou o filtro vazio ou inválido
 if not data_pedido or len(data_pedido) != 2 or data_pedido[0] > data_pedido[1]:
@@ -150,6 +155,11 @@ cores4 = {
     2025 :'#4A81BF'
     }
 
+cores5 = {
+    'Concluído': '#174A7E',
+    'Em andamento': '#4A81BF'
+    }
+
 ## ABA1                 
 
 fig_pedidos_mensal = px.line(pedidos_mensal,
@@ -171,7 +181,7 @@ fig_pedidos_mensal.update_layout(
 
 # Display the data in Streamlit
 
-aba1, aba2, aba3 = st.tabs(['Visão Geral dos Pedidos', 'Compliance', 'Auditoria'])
+aba1, aba2, aba3, aba4 = st.tabs(['Visão Geral dos Pedidos', 'Compliance', 'Auditoria', 'Follow UPs'])
 
 with aba1:
     st.plotly_chart(fig_pedidos_mensal,use_container_width = True)
@@ -372,4 +382,71 @@ with aba3:
         )
         fig_pedidos_inefetivos.update_yaxes(title=None, showticklabels=False)
         st.plotly_chart(fig_pedidos_inefetivos, use_container_width = True)
+
+with aba4:
+    
+    coluna1, coluna2 = st.columns(2)
+    
+    with coluna1:
         
+        lista_auditoria = ['Todas'] + list(df_fup['Auditoria'].dropna().unique())
+        lista_criticidade = ['Todas'] + list(df_fup['Risco'].dropna().str.strip().unique())
+        
+        filtro_auditoria = st.selectbox('Selecione a auditoria que deseja visualizar', lista_auditoria, index=0)
+        filtro_criticidade = st.selectbox('Selecione a criticidade que deseja visualizar', lista_criticidade, index=0)
+        
+        if filtro_auditoria != 'Todas':
+            df_fup = df_fup[df_fup['Auditoria'] == filtro_auditoria]
+        if filtro_criticidade != 'Todas':
+            df_fup = df_fup[df_fup['Risco'] == filtro_criticidade]
+    
+        st.metric('Total Concluído', formata_numero(df_fup[df_fup['Status'] == 'Concluído'].shape[0]))
+        
+    with coluna2:
+        
+        lista_responsaveis = ['Todos'] + list(df_fup['Responsavel'].dropna().unique())
+        lista_status = ['Todos'] + list(df_fup['Status'].dropna().unique())
+        
+        filtro_responsaveis = st.selectbox('Selecione o responsável da área auditada', lista_responsaveis, index=0)
+        filtro_status = st.selectbox('Selecione o status do plano de ação', lista_status, index=0)
+        
+        if filtro_responsaveis != 'Todos':
+            df_fup = df_fup[df_fup['Responsavel'] == filtro_responsaveis]
+        if filtro_status != 'Todos':
+            df_fup = df_fup[df_fup['Status'] == filtro_status]
+            
+        st.metric('Total Em andamento', formata_numero(df_fup[df_fup['Status'] == 'Em andamento'].shape[0]))
+        
+tabela_auditoria = df_fup.groupby(['Ano', 'Auditoria', 'Status'])['ID'].agg('count').sort_values(ascending = False).reset_index()
+
+y_max_auditoria = df_fup.groupby(['Ano', 'Auditoria', 'Status'])['ID'].count().max() *1.5
+
+fig_auditoria = px.bar(
+    tabela_auditoria,
+    x='Auditoria',
+    y='ID',
+    title = 'Status dos Planos de Ação',
+    text_auto=True,
+    barmode='stack',
+    color='Status',
+    color_discrete_map=cores5)
+
+fig_auditoria.update_yaxes(title=None, showticklabels=False, range=[0, y_max_auditoria])  # Remove título e ticks do eixo Y
+fig_auditoria.update_xaxes(title=None)  # Remove o título do eixo X, mas mantém os rótulos
+fig_auditoria.update_traces(textposition='inside', textangle=0)  # Centralizar os números dentro das barras
+
+st.plotly_chart(fig_auditoria, use_container_width = True)
+
+st.header('Controle de Planos de Ação')
+st.dataframe(df_fup)
+st.markdown(f'A tabela possui :blue[{df_fup.shape[0]}] linhas e :blue[{df_fup.shape[1]}] colunas.')
+nome_arquivo3 = st.text_input('', label_visibility = 'collapsed', value = 'Digite o nome do seu arquivo.', key='nome arquivo fup')
+nome_arquivo3 += '.csv'
+st.download_button('Fazer download em csv', 
+                   data = converte_csv(df_fup), 
+                   file_name = nome_arquivo3, 
+                   mime = 'text/csv', 
+                   on_click = mensagem_sucesso,key='fup')
+
+
+
