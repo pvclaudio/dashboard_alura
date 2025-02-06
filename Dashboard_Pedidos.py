@@ -417,36 +417,36 @@ with aba4:
             
         st.metric('Total Em andamento', formata_numero(df_fup[df_fup['Status'] == 'Em andamento'].shape[0]))
         
-tabela_auditoria = df_fup.groupby(['Ano', 'Auditoria', 'Status'])['ID'].agg('count').sort_values(ascending = False).reset_index()
-
-y_max_auditoria = df_fup.groupby(['Ano', 'Auditoria', 'Status'])['ID'].count().max() *1.5
-
-fig_auditoria = px.bar(
-    tabela_auditoria,
-    x='Auditoria',
-    y='ID',
-    title = 'Status dos Planos de Ação',
-    text_auto=True,
-    barmode='stack',
-    color='Status',
-    color_discrete_map=cores5)
-
-fig_auditoria.update_yaxes(title=None, showticklabels=False, range=[0, y_max_auditoria])  # Remove título e ticks do eixo Y
-fig_auditoria.update_xaxes(title=None)  # Remove o título do eixo X, mas mantém os rótulos
-fig_auditoria.update_traces(textposition='inside', textangle=0)  # Centralizar os números dentro das barras
-
-st.plotly_chart(fig_auditoria, use_container_width = True)
-
-st.header('Controle de Planos de Ação')
-st.dataframe(df_fup)
-st.markdown(f'A tabela possui :blue[{df_fup.shape[0]}] linhas e :blue[{df_fup.shape[1]}] colunas.')
-nome_arquivo3 = st.text_input('', label_visibility = 'collapsed', value = 'Digite o nome do seu arquivo.', key='nome arquivo fup')
-nome_arquivo3 += '.csv'
-st.download_button('Fazer download em csv', 
-                   data = converte_csv(df_fup), 
-                   file_name = nome_arquivo3, 
-                   mime = 'text/csv', 
-                   on_click = mensagem_sucesso,key='fup')
+    tabela_auditoria = df_fup.groupby(['Ano', 'Auditoria', 'Status'])['ID'].agg('count').sort_values(ascending = False).reset_index()
+    
+    y_max_auditoria = df_fup.groupby(['Ano', 'Auditoria', 'Status'])['ID'].count().max() *1.5
+    
+    fig_auditoria = px.bar(
+        tabela_auditoria,
+        x='Auditoria',
+        y='ID',
+        title = 'Status dos Planos de Ação',
+        text_auto=True,
+        barmode='stack',
+        color='Status',
+        color_discrete_map=cores5)
+    
+    fig_auditoria.update_yaxes(title=None, showticklabels=False, range=[0, y_max_auditoria])  # Remove título e ticks do eixo Y
+    fig_auditoria.update_xaxes(title=None)  # Remove o título do eixo X, mas mantém os rótulos
+    fig_auditoria.update_traces(textposition='inside', textangle=0)  # Centralizar os números dentro das barras
+    
+    st.plotly_chart(fig_auditoria, use_container_width = True)
+    
+    st.header('Controle de Planos de Ação')
+    st.dataframe(df_fup)
+    st.markdown(f'A tabela possui :blue[{df_fup.shape[0]}] linhas e :blue[{df_fup.shape[1]}] colunas.')
+    nome_arquivo3 = st.text_input('', label_visibility = 'collapsed', value = 'Digite o nome do seu arquivo.', key='nome arquivo fup')
+    nome_arquivo3 += '.csv'
+    st.download_button('Fazer download em csv', 
+                       data = converte_csv(df_fup), 
+                       file_name = nome_arquivo3, 
+                       mime = 'text/csv', 
+                       on_click = mensagem_sucesso,key='fup')
 
 
 
