@@ -39,6 +39,11 @@ df.rename(columns={'Valor PO - R$': 'Valor'}, inplace=True)
 df_compliance = df.copy()
 df_compliance['Check Compliance'] = df_compliance['Check Compliance'].fillna('Baixo')
 
+check_fornecedor = st.sidebar.toggle('Verificar possível duplicidade?', value=False)
+
+if check_fornecedor == True:
+    df = df[df['Check Fornecedor'] == 'Sim']
+    
 # Expansor para seleção de colunas
 with st.expander('Colunas'):
     colunas = st.multiselect('Selecione', list(df.columns), list(df.columns))
