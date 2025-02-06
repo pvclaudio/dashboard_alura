@@ -341,7 +341,7 @@ with aba3:
     
     st.download_button(
     label="Fazer download em Excel",
-    data=converte_excel(df_inefetivo),
+    data=converte_excel(df_filtrado),
     file_name=f"{nome_arquivo}.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     on_click=mensagem_sucesso,
