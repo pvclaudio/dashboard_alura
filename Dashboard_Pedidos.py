@@ -53,6 +53,7 @@ df_fup['Status'] = df_fup['Status'].replace(
     {'Concluído - No Prazo': 'Concluído', 'Concluído - Fora do Prazo': 'Concluído'}
 )
 df_fup = df_fup.drop(columns='Titulo')
+df_fup['Status'] = df_fup['Status'].str.strip()
 
 # Sidebar - Filtros
 st.sidebar.title('Filtros')
@@ -125,7 +126,7 @@ df_compliance['Check Compliance'] = df_compliance['Check Compliance'].fillna('Ba
 pedidos_compliance = df_compliance.groupby('Check Compliance')['Numero PO'].agg('count').reset_index()
 pedidos_compliance['Numero Formatado'] = pedidos_compliance['Numero PO'].apply(lambda x: formata_numero2(x))
 
-pedidos_compliance_alto = df_compliance[df_compliance['Check Compliance'] == 'Alto'].groupby(['Ano','Nome Fornecedor'])['Valor'].agg('sum').sort_values(ascending=False).reset_index()
+pedidos_compliance_alto = df_compliance[df_compliance['Check Compliance'].isin(['Alto','Médio'])].groupby(['Ano','Nome Fornecedor'])['Valor'].agg('sum').sort_values(ascending=False).reset_index()
 pedidos_compliance_alto['Valor Formatado'] = pedidos_compliance_alto['Valor'].apply(lambda x: formata_numero2(x, 'R$'))
 pedidos_compliance_alto['Ano'] = pedidos_compliance_alto['Ano'].astype(str)
 
@@ -381,6 +382,7 @@ with aba3:
             yaxis_title=None
         )
         fig_pedidos_inefetivos.update_yaxes(title=None, showticklabels=False)
+        fig_pedidos_inefetivos.update_traces(textposition='inside', textangle=0)
         st.plotly_chart(fig_pedidos_inefetivos, use_container_width = True)
 
 with aba4:
