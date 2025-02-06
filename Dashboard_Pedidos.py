@@ -306,13 +306,11 @@ with aba2:
     fig_fornecedor_alto_area.update_yaxes(title=None, showticklabels=False, range=[0, y_max_pedidos_compliance_alto_area])
     
     st.plotly_chart(fig_compliance_riscos, use_container_width = True)
-    coluna1, coluna2 = st.columns(2)
     
-    with coluna1:
-        st.plotly_chart(fig_fornecedor_alto, use_container_width = True)
 
-    with coluna2:
-        st.plotly_chart(fig_fornecedor_alto_area, use_container_width = True)
+    st.plotly_chart(fig_fornecedor_alto, use_container_width = True)
+
+    st.plotly_chart(fig_fornecedor_alto_area, use_container_width = True)
 
 
 with aba3:
@@ -449,6 +447,5 @@ with aba4:
                        file_name = nome_arquivo3, 
                        mime = 'text/csv', 
                        on_click = mensagem_sucesso,key='fup')
-
 
 
