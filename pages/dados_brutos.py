@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+from io import BytesIO
 
 # Função para converter dataframe em CSV
 @st.cache_data
@@ -13,6 +14,13 @@ def mensagem_sucesso():
     sucesso = st.success('Arquivo baixado com sucesso!', icon="✅")
     time.sleep(5)
     sucesso.empty()
+    
+def converte_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Dados')  # Exportar para Excel sem índice
+    return output.getvalue()  # Retorna os bytes do arquivo
+
 # Configuração da página
 st.set_page_config(layout='wide')
 
@@ -103,14 +111,15 @@ st.markdown('Escreva o nome do arquivo.')
 coluna1, coluna2 = st.columns(2)
 
 with coluna1:
-    nome_arquivo = st.text_input('', label_visibility='collapsed', value='dados') + '.csv'
+    nome_arquivo = st.text_input('', label_visibility='collapsed', value='dados') + '.xlsx'
 
 # Botão de download
 with coluna2:
     st.download_button(
-        'Fazer download em csv',
-        data=converte_csv(dados_filtrados),
-        file_name=nome_arquivo,
-        mime='text/csv',
-        on_click=mensagem_sucesso
+    label="Fazer download em Excel",
+    data=converte_excel(dados_filtrados),
+    file_name=f"{nome_arquivo}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    on_click=mensagem_sucesso,
+    key="download4"
     )
