@@ -13,6 +13,7 @@ import pandas as pd
 import plotly.express as px
 import calendar
 import time
+from io import BytesIO
 
 st.set_page_config(layout = 'wide')
 
@@ -39,6 +40,12 @@ def mensagem_sucesso():
     sucesso = st.success('Arquivo baixado com sucesso!', icon = "✅" )
     time.sleep(5)
     sucesso.empty()
+
+def converte_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Dados')  # Exportar para Excel sem índice
+    return output.getvalue()  # Retorna os bytes do arquivo
 
 # Read the Excel file correctly
 # df = pd.read_excel("auditoria_pedidos.xlsx", engine="openpyxl")
@@ -329,14 +336,17 @@ with aba3:
     st.markdown(f'A tabela possui :blue[{df_filtrado.shape[0]}] linhas e :blue[{df_filtrado.shape[1]}] colunas.')
     
     df_inefetivo = df[df['Check Alcada'] == 'Inefetivo'].groupby(['Area Autorizador','Tipo Contábil'])['Numero PO'].agg('count').reset_index().sort_values('Numero PO',ascending = False)
-    nome_arquivo = st.text_input('', label_visibility = 'collapsed', value = 'Digite o nome do seu arquivo')
-    nome_arquivo += '.csv'
+    nome_arquivo = st.text_input('', label_visibility = 'collapsed', value = 'pedidos_inefetivos')
+    nome_arquivo += '.xlsx'
     
-    st.download_button('Fazer download em csv', 
-                       data = converte_csv(df_inefetivo), 
-                       file_name = nome_arquivo, 
-                       mime = 'text/csv', 
-                       on_click = mensagem_sucesso)
+    st.download_button(
+    label="Fazer download em Excel",
+    data=converte_excel(df_inefetivo),
+    file_name=f"{nome_arquivo}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    on_click=mensagem_sucesso,
+    key="download"
+    )
     
     st.header('Análise do Agente (IA)')
     
@@ -344,13 +354,17 @@ with aba3:
     st.dataframe(df_agente)
     st.markdown(f'A tabela possui :blue[{df_agente.shape[0]}] linhas e :blue[{df_agente.shape[1]}] colunas.')
     
-    nome_arquivo2 = st.text_input('', label_visibility = 'collapsed', value = 'Digite o nome do seu arquivo.')
-    nome_arquivo2 += '.csv'
-    st.download_button('Fazer download em csv', 
-                       data = converte_csv(df_agente), 
-                       file_name = nome_arquivo2, 
-                       mime = 'text/csv', 
-                       on_click = mensagem_sucesso)
+    nome_arquivo2 = st.text_input('', label_visibility = 'collapsed', value = 'analise_agente_ia')
+    nome_arquivo2 += '.xlsx'
+    
+    st.download_button(
+    label="Fazer download em Excel",
+    data=converte_excel(df_agente),
+    file_name=f"{nome_arquivo2}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    on_click=mensagem_sucesso,
+    key="download2"
+    )
     
     
     
@@ -440,12 +454,17 @@ with aba4:
     st.header('Controle de Planos de Ação')
     st.dataframe(df_fup)
     st.markdown(f'A tabela possui :blue[{df_fup.shape[0]}] linhas e :blue[{df_fup.shape[1]}] colunas.')
-    nome_arquivo3 = st.text_input('', label_visibility = 'collapsed', value = 'Digite o nome do seu arquivo.', key='nome arquivo fup')
-    nome_arquivo3 += '.csv'
-    st.download_button('Fazer download em csv', 
-                       data = converte_csv(df_fup), 
-                       file_name = nome_arquivo3, 
-                       mime = 'text/csv', 
-                       on_click = mensagem_sucesso,key='fup')
+    
+    nome_arquivo3 = st.text_input('', label_visibility = 'collapsed', value = 'planos_de_acao', key='nome arquivo fup')
+    nome_arquivo3 += '.xlsx'
+    
+    st.download_button(
+    label="Fazer download em Excel",
+    data=converte_excel(df_fup),
+    file_name=f"{nome_arquivo3}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    on_click=mensagem_sucesso,
+    key="download3"
+    )
 
 
