@@ -382,7 +382,7 @@ with aba3:
             yaxis_title=None
         )
         fig_pedidos_inefetivos.update_yaxes(title=None, showticklabels=False)
-        fig_pedidos_inefetivos.update_traces(textposition='inside', textangle=0)
+        fig_pedidos_inefetivos.update_traces(textposition='inside')
         st.plotly_chart(fig_pedidos_inefetivos, use_container_width = True)
 
 with aba4:
