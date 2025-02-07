@@ -74,12 +74,14 @@ fornecedor = st.sidebar.selectbox('Selecione o Fornecedor', opcoes_fornecedor, i
 area = st.sidebar.selectbox('Selecione a Área', opcoes_area, index=0, key='selecionar area')
 tipo_contabil = st.sidebar.selectbox('Selecione o tipo contábil', opcoes_contabil, index=0)
 ano_escolhido = st.sidebar.selectbox('Selecione o Ano', opcoes_ano, index=0, key='selecionar ano')
-data_pedido = st.sidebar.date_input(
+data_pedido = st.sidebar.slider(
     'Selecione a Data',
-    value=(df['Data do Pedido'].min(), df['Data do Pedido'].max()),  # Mantém os valores originais como datetime
+    min_value=df['Data do Pedido'].min().date(),  # Converte para apenas a data
+    max_value=df['Data do Pedido'].max().date(),  # Converte para apenas a data
+    value=(df['Data do Pedido'].min().date(), df['Data do Pedido'].max().date()),  # Intervalo inicial
+    format="DD/MM/YYYY",  # Formato brasileiro de data
     key='data_pedido'
 )
-
 
 if fornecedor != "Todos":
     df = df[df['Nome Fornecedor'] == fornecedor]
