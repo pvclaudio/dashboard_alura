@@ -49,6 +49,21 @@ df_lms_filtrado['Ano'] = df_lms_filtrado['Ano_Mes'].str.slice(0, 4)
 df_agente = pd.read_excel('auditoria_lms.xlsx', engine = 'openpyxl')
 df_agente['Nome CC'].fillna('Não informado', inplace = True)
 
+# Opções para os filtros
+
+opcoes_anos = ['Todos'] + list(df_lms['Ano'].unique())
+
+# Criando Filtros
+
+with st.sidebar.expander('Ano'):
+    anos = st.selectbox('Selecione os Anos', options=opcoes_anos, index=0)
+    
+# Lógica dos filtros
+
+if anos != 'Todos':
+    df_lms = df_lms[df_lms['Ano'] == anos]
+    df_lms_filtrado = df_lms_filtrado[df_lms_filtrado['Ano'] == anos]
+
 # Tabelas
 
 tab_tipo = df_lms.groupby(['Ano', 'Categoria do Gasto'])['Valor'].agg('sum').sort_values(ascending=False).reset_index()
