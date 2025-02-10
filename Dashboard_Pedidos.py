@@ -131,6 +131,7 @@ pedidos_mensal = pedidos_mensal.groupby(['Ano', 'Mes'], as_index=False)['Valor']
 meses_ordem = list(calendar.month_name[1:])
 pedidos_mensal['Mes'] = pd.Categorical(pedidos_mensal['Mes'], categories=meses_ordem, ordered=True)
 pedidos_mensal = pedidos_mensal.sort_values(['Ano', 'Mes']).reset_index(drop=True)
+pedidos_mensal['Valor Formatado'] = pedidos_mensal['Valor'].apply(lambda x: formata_numero2(x, 'R$'))
 
 pedidos_area = df.groupby(['Ano', 'Area Autorizador'])['Valor'].agg('sum').reset_index()
 pedidos_area['Valor'] = round(pedidos_area['Valor'], 0)
@@ -184,6 +185,7 @@ cores5 = {
 fig_pedidos_mensal = px.line(pedidos_mensal,
                              x = 'Mes',
                              y = 'Valor',
+                             text = 'Valor Formatado',
                              title = '💵 Gastos por mês',
                              color = 'Ano',
                              color_discrete_map = cores4,
@@ -195,8 +197,10 @@ fig_pedidos_mensal = px.line(pedidos_mensal,
 fig_pedidos_mensal.update_layout(
     xaxis_title=None,
     yaxis_title=None,
-    yaxis=dict(range=[0, pedidos_mensal['Valor'].max()*1.1])
-)
+    yaxis=dict(range=[0, pedidos_mensal['Valor'].max()*1.1],showticklabels=False)
+    )
+
+fig_pedidos_mensal.update_traces(textposition='top center', textfont=dict(color='black'))
 
 # Display the data in Streamlit
 
