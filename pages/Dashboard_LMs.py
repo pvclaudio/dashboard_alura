@@ -79,8 +79,8 @@ tab_cc['Valor Formatado'] = tab_cc['Valor'].apply(lambda x: format_value(x, 'R$'
 # Cores
 
 cores = {
-    '2024': '#2596be',
-    '2025': '#94AFC5'
+    '2024': '#4A81BF',
+    '2025': '#174A7E'
     }
 
 # Gráfico
@@ -99,7 +99,7 @@ fig_mes = px.line(
 # Ajustes de layout
 
 fig_mes.update_layout(xaxis_title=None, yaxis_title=None, yaxis=dict(showticklabels=False))
-fig_mes.update_traces(textposition='top center')
+fig_mes.update_traces(textposition='top center', textfont=dict(color='black'))
 
 # Streamlit
 
