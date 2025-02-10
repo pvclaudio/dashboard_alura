@@ -83,6 +83,7 @@ data_pedido = st.sidebar.slider(
     key='data_pedido'
 )
 
+
 if fornecedor != "Todos":
     df = df[df['Nome Fornecedor'] == fornecedor]
 
@@ -175,7 +176,7 @@ cores5 = {
 fig_pedidos_mensal = px.line(pedidos_mensal,
                              x = 'Mes',
                              y = 'Valor',
-                             title = 'Gastos por mês',
+                             title = '💵 Gastos por mês',
                              color = 'Ano',
                              color_discrete_map = cores4,
                              markers = True)
@@ -329,16 +330,16 @@ with aba3:
     "Numero PO", "Tipo PO", "Tipo Contábil", "Valor", "Aprovador",
     "Numero Fornecedor", "Nome Fornecedor", "Area Autorizador", "Check Compliance"]
     
-    st.header('Pedidos Inefetivos')
+    st.header('Pedidos Avaliados')
     
-    df_filtrado = df[df['Check Alcada'] == 'Inefetivo'][colunas_desejadas].reset_index(drop=True)
+    df_filtrado = df[(df['Check Alcada'] == 'Inefetivo') | ((df['Check Compliance'] == 'Alto') & (df['Valor'] >= 15000))][colunas_desejadas].reset_index(drop=True)
     df_filtrado = df_filtrado.dropna(subset=['Area Autorizador'])
     df_filtrado['Check Compliance'] = df_filtrado['Check Compliance'].fillna('Baixo')
     st.dataframe(df_filtrado)
     st.markdown(f'A tabela possui :blue[{df_filtrado.shape[0]}] linhas e :blue[{df_filtrado.shape[1]}] colunas.')
     
     df_inefetivo = df[df['Check Alcada'] == 'Inefetivo'].groupby(['Area Autorizador','Tipo Contábil'])['Numero PO'].agg('count').reset_index().sort_values('Numero PO',ascending = False)
-    nome_arquivo = st.text_input('', label_visibility = 'collapsed', value = 'pedidos_inefetivos')
+    nome_arquivo = st.text_input('', label_visibility = 'collapsed', value = 'pedidos_avaliados')
     nome_arquivo += '.xlsx'
     
     st.download_button(
@@ -350,7 +351,7 @@ with aba3:
     key="download"
     )
     
-    st.header('Análise do Agente (IA)')
+    st.header('Análise do Agente (IA) 🤖')
     
     df_agente = pd.read_excel('auditoria_pedidos.xlsx', engine='openpyxl').drop(columns=['ID'])
     st.dataframe(df_agente)
@@ -468,5 +469,3 @@ with aba4:
     on_click=mensagem_sucesso,
     key="download3"
     )
-
-
