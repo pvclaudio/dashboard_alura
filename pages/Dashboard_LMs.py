@@ -48,6 +48,7 @@ df_lms_filtrado['Ano'] = df_lms_filtrado['Ano_Mes'].str.slice(0, 4)
 
 df_agente = pd.read_excel('auditoria_lms.xlsx', engine = 'openpyxl')
 df_agente['Nome CC'].fillna('Não informado', inplace = True)
+df_agente.drop(columns='ID', inplace = True)
 
 # Opções para os filtros
 
