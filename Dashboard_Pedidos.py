@@ -70,10 +70,18 @@ opcoes_area = ["Todos"] + list(df['Area Autorizador'].dropna().unique())
 opcoes_contabil = ["Todos"] + list(df['Tipo Contábil'].dropna().unique())
 opcoes_ano = ['Todos'] + [2025] + list(df_fup['Ano'].dropna().unique())
 
-fornecedor = st.sidebar.selectbox('Selecione o Fornecedor', opcoes_fornecedor, index=0)
-area = st.sidebar.selectbox('Selecione a Área', opcoes_area, index=0, key='selecionar area')
-tipo_contabil = st.sidebar.selectbox('Selecione o tipo contábil', opcoes_contabil, index=0)
-ano_escolhido = st.sidebar.selectbox('Selecione o Ano', opcoes_ano, index=0, key='selecionar ano')
+with st.sidebar.expander('Selecione o Fornecedor'):
+    fornecedor = st.selectbox('Fornecedores', opcoes_fornecedor, index=0)
+    
+with st.sidebar.expander('Selecione a Área'):
+    area = st.selectbox('Áreas', opcoes_area, index=0, key='selecionar area')
+    
+with st.sidebar.expander('Seleciaone a Categoria'):
+    tipo_contabil = st.selectbox('Tipo Contábil', opcoes_contabil, index=0)
+
+with st.sidebar.expander('Selecione o Ano'):
+    ano_escolhido = st.selectbox('Anos', opcoes_ano, index=0, key='selecionar ano')
+
 data_pedido = st.sidebar.slider(
     'Selecione a Data',
     min_value=df['Data do Pedido'].min().date(),  # Converte para apenas a data
@@ -469,3 +477,5 @@ with aba4:
     on_click=mensagem_sucesso,
     key="download3"
     )
+
+
